@@ -1,0 +1,43 @@
+name: NetDevOps BGP CI Testbed
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-network:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install jinja2 pyyaml
+
+      - name: Spin up Virtual Network Topology
+        run: |
+          docker compose up -d
+          docker exec -i r1 sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons
+          docker exec -i r2 sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons
+          docker exec -i r1 touch /etc/frr/vtysh.conf
+          docker exec -i r2 touch /etc/frr/vtysh.conf
+          docker exec -d r1 /usr/lib/frr/bgpd -d
+          docker exec -d r2 /usr/lib/frr/bgpd -d
+
+      - name: Run NetDevOps Configuration Pipeline
+        run: |
+          python deploy.py
+
+      - name: Verify BGP Peering State
+        run: |
+          sleep 5
+          docker exec -t r1 vtysh -c "show ip bgp summary" | grep "10.0.0.20"

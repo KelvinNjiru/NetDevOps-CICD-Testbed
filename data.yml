@@ -1,0 +1,10 @@
+routers:
+  - name: r1
+    bgp_as: 65001
+    peer_ip: 10.0.0.20
+    peer_as: 65002
+
+  - name: r2
+    bgp_as: 65002
+    peer_ip: 10.0.0.10
+    peer_as: 65001

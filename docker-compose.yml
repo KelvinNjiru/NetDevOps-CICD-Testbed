@@ -1,0 +1,27 @@
+services:
+  r1:
+    image: frrouting/frr:latest
+    container_name: r1
+    privileged: true
+    networks:
+      peering_net:
+        ipv4_address: 10.0.0.10
+    stdin_open: true
+    tty: true
+
+  r2:
+    image: frrouting/frr:latest
+    container_name: r2
+    privileged: true
+    networks:
+      peering_net:
+        ipv4_address: 10.0.0.20
+    stdin_open: true
+    tty: true
+
+networks:
+  peering_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24

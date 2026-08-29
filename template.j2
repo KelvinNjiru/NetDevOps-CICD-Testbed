@@ -1,0 +1,5 @@
+router bgp {{ bgp_as }}
+ no bgp ebgp-requires-policy
+ neighbor {{ peer_ip }} remote-as {{ peer_as }}
+ neighbor {{ peer_ip }} description Peer-to-{{ peer_as }}
+!
