@@ -18,12 +18,13 @@ This is a hands-on learning lab designed to explore **NetDevOps and Network Auto
 ## 2. Lab Architecture & Technologies
 * **Routing Daemon & Containers:** FRRouting (FRR), Docker, Docker Compose
 * **Automation & Scripting:** Python 3, Jinja2, PyYAML
-* **Networking Concepts:** eBGP (AS 65001 $\leftrightarrow$ AS 65002), TCP/IP (Port 179), Linux virtual interfaces (`dummy0`), ICMP testing
+* **Networking Concepts:** eBGP (AS 65001 to AS 65002), TCP/IP (Port 179), Linux virtual interfaces (`dummy0`), ICMP testing
 * **CI/CD:** GitHub Actions
 
 ---
 
 ## 3. Directory Layout
+
 ```plaintext
 NetDevOps-CICD-Testbed/
 ├── .github/
