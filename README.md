@@ -1,112 +1,107 @@
-# Automated NetDevOps CI/CD Testbed
+# Containerized BGP NetDevOps CI/CD Lab
 
-[![CI Pipeline](https://github.com/KelvinNjiru/NetDevOps-CICD-Testbed/actions/workflows/bgp-ci.yml/badge.svg)](https://github.com/KelvinNjiru/NetDevOps-CICD-Testbed/actions)
-📄 **[Download Master Reference PDF](docs/NetDevOps-CI-CD-Documentation.pdf)**
-
----
-
-## 1. Executive Summary & Problem Statement
-Network configuration drift, manual syntax errors, and untested production pushes remain major operational bottlenecks in traditional network infrastructure management. 
-
-This project implements an automated **NetDevOps CI/CD Testbed** applying **Infrastructure as Code (IaC)** principles to network configuration, deployment, and testing:
-* Decouples network state parameters (ASNs, interface IPs, BGP neighbors) into structured YAML data models.
-* Uses dynamic **Jinja2** templates and a **Python** orchestration engine (`deploy.py`) to render and inject configurations into containerized **FRRouting (FRR)** instances over an isolated Docker bridge.
-* Integrates continuous testing via **GitHub Actions** to spin up virtual nodes on headless cloud runners, assert dynamic **eBGP** peering states (`Established`), and verify **0% packet loss** data plane forwarding on every commit.
+[![NetDevOps BGP CI Testbed](https://github.com/KelvinNjiru/NetDevOps-CICD-Testbed/actions/workflows/bgp-ci.yml/badge.svg)](https://github.com/KelvinNjiru/NetDevOps-CICD-Testbed/actions)
+📄 **[Download Project PDF Reference](docs/NetDevOps-CI-CD-Documentation.pdf)**
 
 ---
 
-## 2. Architecture & Tech Stack
-* **Virtualization & Routing Fabric:** Docker, Docker Compose, FRRouting (FRR)
-* **Programming & Templating:** Python 3, Jinja2, PyYAML
-* **Protocols & Standards:** BGP (Border Gateway Protocol / eBGP), TCP/IP, Linux Networking
-* **CI/CD & Source Control:** GitHub Actions, Git
+## 1. Project Overview & Motivation
+This is a hands-on learning lab designed to explore **NetDevOps and Network Automation** fundamentals. Instead of relying on manual CLI configuration or heavy GUI network emulators, this testbed sets up a lightweight, containerized routing environment to practice Infrastructure as Code (IaC) workflows.
+
+### What This Testbed Demonstrates
+* **Data & Template Separation:** Router variables (Autonomous System Numbers, IP addresses, BGP neighbor relationships) are defined in structured YAML (`data.yml`).
+* **Automated Config Injection:** A Python script (`deploy.py`) uses Jinja2 (`template.j2`) to dynamically render FRRouting (FRR) configs and inject them into isolated Docker containers via the Linux CLI.
+* **Automated CI Validation:** A GitHub Actions workflow spins up the Docker topology inside a headless Linux runner, deploys the configs, and runs automated assertions to verify dynamic eBGP peering and end-to-end data plane reachability.
 
 ---
 
-## 3. Repository File Structure
+## 2. Lab Architecture & Technologies
+* **Routing Daemon & Containers:** FRRouting (FRR), Docker, Docker Compose
+* **Automation & Scripting:** Python 3, Jinja2, PyYAML
+* **Networking Concepts:** eBGP (AS 65001 $\leftrightarrow$ AS 65002), TCP/IP (Port 179), Linux virtual interfaces (`dummy0`), ICMP testing
+* **CI/CD:** GitHub Actions
+
+---
+
+## 3. Directory Layout
 ```plaintext
 NetDevOps-CICD-Testbed/
 ├── .github/
 │   └── workflows/
-│       └── bgp-ci.yml      # Automated GitHub Actions CI workflow
+│       └── bgp-ci.yml      # CI workflow running automated checks
 ├── docs/
-│   └── NetDevOps-CI-CD-Documentation.pdf # Master technical documentation PDF
-├── venv/                   # Python virtual environment
-├── data.yml                # Structured network state variables (ASNs, IPs)
-├── template.j2             # Jinja2 template for FRR/BGP router configuration
-├── deploy.py               # Python orchestration & configuration push engine
-├── docker-compose.yml      # Containerized multi-router topology definition
-├── .gitignore              # Git ignore rules
-└── README.md               # Main project documentation
-4. Technical Runbook & Command Reference
-Topology & Container Lifecycle
-Start Environment: Spawns the isolated virtual bridge network (10.0.0.0/24) and launches router containers (r1, r2) in the background:
+│   └── NetDevOps-CI-CD-Documentation.pdf # Exported lab documentation
+├── venv/                   # Local Python virtual environment
+├── data.yml                # Lab variables (ASNs, interfaces, neighbors)
+├── template.j2             # Jinja2 template for FRR BGP configuration
+├── deploy.py               # Python automation script
+├── docker-compose.yml      # Docker network and router container definitions
+├── .gitignore              # Files excluded from git
+└── README.md               # Lab overview and runbook
+4. Step-by-Step Lab Runbook
+Step 1: Spin Up the Virtual Router Topology
+Start the two FRR router containers (r1 and r2) connected over a private Docker bridge network (10.0.0.0/24):
 
 Bash
 docker compose up -d
-Teardown & Clean: Stops and removes running containers, networks, and attached volumes:
+Step 2: Bootstrap FRR Daemons
+Enable the BGP routing daemon inside each container and start the background processes:
 
 Bash
-docker compose down -v
-Linux & Router Daemon Bootstrapping
-Enable BGP Daemon: Enables bgpd inside the FRR container by editing configuration files in place:
-
-Bash
+# Enable bgpd
 docker exec -i r1 sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons
 docker exec -i r2 sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons
-Initialize CLI Configuration: Suppresses CLI initialization warnings:
 
-Bash
+# Initialize vtysh config
 docker exec -i r1 touch /etc/frr/vtysh.conf
 docker exec -i r2 touch /etc/frr/vtysh.conf
-Launch BGP Daemons: Starts the routing daemon binaries in background mode:
 
-Bash
+# Start bgpd process
 docker exec -d r1 /usr/lib/frr/bgpd -d
 docker exec -d r2 /usr/lib/frr/bgpd -d
-Python Automation Pipeline
-Activate Virtual Environment:
+Step 3: Run the Automation Script
+Activate the Python virtual environment and run the deployment script to render and push configs:
 
 Bash
 source venv/bin/activate
-Execute Deployment Engine: Reads data.yml, renders template.j2, and injects configs into routers:
-
-Bash
 python deploy.py
-Data Plane & Route Advertisement
-Create Dummy Interface: Simulates a local LAN subnet on r1:
+Step 4: Inject a Test Prefix on R1
+Simulate a local LAN network attached to r1 using a Linux dummy interface, then advertise the subnet into BGP:
 
 Bash
+# Create dummy interface with test IP
 docker exec -it r1 ip link add dummy0 type dummy
 docker exec -it r1 ip addr add 192.168.10.1/24 dev dummy0
 docker exec -it r1 ip link set dummy0 up
-Advertise Prefix via BGP:
 
-Bash
+# Advertise route into BGP
 docker exec -it r1 vtysh -c "configure terminal" \
   -c "router bgp 65001" \
   -c "address-family ipv4 unicast" \
   -c "network 192.168.10.0/24"
-Verification & Validation
-Inspect BGP Peering State:
+5. Verification & Testing
+1. Control Plane Peering Check
+Verify that the eBGP session between r1 (10.0.0.10) and r2 (10.0.0.20) reaches the Established state:
 
 Bash
 docker exec -it r1 vtysh -c "show ip bgp summary"
-Verify Route Table Convergence: Confirm r2 learned 192.168.10.0/24 via next-hop 10.0.0.10:
+2. Routing Table Check
+Verify that r2 learned the advertised 192.168.10.0/24 subnet via next-hop 10.0.0.10:
 
 Bash
 docker exec -it r2 vtysh -c "show ip route bgp"
-Assert End-to-End Data Plane Reachability:
+3. Data Plane Reachability Test
+Assert that r2 can successfully forward ICMP packets to the simulated subnet on r1:
 
 Bash
 docker exec -it r2 ping -c 3 192.168.10.1
-5. Continuous Integration (GitHub Actions)
-The workflow defined in .github/workflows/bgp-ci.yml executes on every push to main:
+6. Continuous Integration (CI) Workflow
+The GitHub Actions workflow (.github/workflows/bgp-ci.yml) replicates the manual steps above automatically on every commit:
 
-Checks out the repository and installs Python and Docker dependencies.
+Provisions the Ubuntu runner and launches the Docker Compose environment.
 
-Deploys the containerized topology.
+Executes deploy.py to configure both routers.
 
-Renders and applies configurations using deploy.py.
+Automatically queries vtysh to assert that BGP peering is established.
 
-Executes dynamic assertions verifying the BGP state reaches Established and pings return 0% packet loss.
+Injects the test route and asserts 0% packet loss via ping checks.
