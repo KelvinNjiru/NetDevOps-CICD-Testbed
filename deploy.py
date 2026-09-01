@@ -18,6 +18,6 @@ for router in data["routers"]:
     
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     if result.returncode == 0:
-        print(f"✅ Successfully configured {router['name']}")
+        print(f" Successfully configured {router['name']}")
     else:
         print(f"❌ Error configuring {router['name']}:\n{result.stderr}")
